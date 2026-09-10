@@ -140,7 +140,7 @@ typedef struct struct_cal  {                                          // Calibra
 struct_cal calibrations;
 
 typedef struct user_settings  {                                       // User settings
-  float sleepTime = 0.5;                                                      // Time between polling intervals in minutes
+  float sleepTime = 1;                                                      // Time between polling intervals in minutes
   float tempSet = 22.0;                                                       // Default temperature setting
   float tempHyst = 0.5;                                                       // Temperature Hysteresis
   char brightness = 7;                                                        // Screen brightness
@@ -350,19 +350,24 @@ void initWiFi()  {
 void MQTTSubCallback(char* topic, byte* payload, unsigned int length) {
   char msgBuf[256];
   static unsigned long lastBeacon = 0;
+
   Serial.println("\n     *****MQTT message received*****");
-  Serial.print("Last beacon: "); Serial.println(lastBeacon);
-  Serial.print("Now: "); Serial.println(millis());
+  // Serial.print("Last beacon: "); Serial.println(lastBeacon);
+  // Serial.print("Now: "); Serial.println(millis());
 
-
-  if (millis()-1000>lastBeacon)  {
-    Serial.print("     Topic:"); Serial.println(topic);
-    Serial.print("     Message: "); {Serial.print(msgBuf);} Serial.println("");
-    Serial.print("     Length: "); Serial.print(length); Serial.println(" char");
-    lastBeacon = millis();
+  if (strcmp(topic, MQTTTopics[0])!=0)  {
+    if (millis()-500>lastBeacon)  {
+      Serial.print("     Topic:"); Serial.println(topic);
+      Serial.print("     Message: "); {Serial.print(msgBuf);} Serial.println("");
+      Serial.print("     Length: "); Serial.print(length); Serial.println(" char");
+      lastBeacon = millis();
+    }
+    else  {
+      Serial.println("Received recently sent beacon");
+    }
   }
   else  {
-    Serial.println("Received recently sent beacon");
+    Serial.println("Received broadcast topic");
   }
   Serial.println("     ******************************\n");
 }
@@ -610,6 +615,7 @@ void loopFast(void *pvParameters)  {
 }
 
 void MQTTreconnect() {
+  char name[64];
   // Loop until we're reconnected
   while (!MQTTClient.connected()) {
     Serial.print("Attempting MQTT reconnection...");
@@ -632,16 +638,11 @@ void MQTTreconnect() {
           screen.print("Subscribed to "); screen.println(MQTTTopics[i]);
         }
         else  {
-          Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[i]);
-          screen.println("Failed");
+          Serial.println("Subscribing failed: "); Serial.print(MQTTTopics[i]); Serial.print(", rc="); Serial.print(MQTTClient.state()); Serial.println(" try again in 5 seconds");
+        delay(5000);
         }
       }
-      else {
-        Serial.print("failed, rc=");
-        Serial.print(MQTTClient.state());
-        Serial.println(" try again in 5 seconds");
-        delay(5000);
-      }
+    }
   }
 }
 
