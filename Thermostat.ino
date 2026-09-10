@@ -402,8 +402,14 @@ void initMQTT() {
         Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[1]);
         screen.println("Failed");
       }
-
-      
+      if (MQTTClient.subscribe(name))  {
+        Serial.print("Subscribed to topic: "); Serial.println(name);
+        screen.print("Subscribed to "); screen.println(name);
+      }
+      else  {
+        Serial.println("Subscribing failed: "); Serial.println(name);
+        screen.println("Failed");
+      }
     }
     else {                                                              // Error messages if not connected
       int MQTTErr = MQTTClient.state();
@@ -616,11 +622,11 @@ void MQTTreconnect() {
   while (!MQTTClient.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    // if (MQTTClient.connect("ESP8266Client")) {
-    //   Serial.println("connected");
-    //   // Subscribe
-    //   MQTTClient.subscribe("esp32/output");
-    // }
+    if (MQTTClient.connect("ESP8266Client")) {
+      Serial.println("connected");
+      // Subscribe
+      MQTTClient.subscribe("esp32/output");
+    }
   }
   Serial.println("Connected");
 }
