@@ -384,31 +384,23 @@ void initMQTT() {
       Serial.println("Subscribing to topic(s).");
       screen.println("Subscribing to topics");
       delay(1000);
-      for (int i=0; i<2; i++)  {
+      for (int i=0; i<3; i++)  {
         strcpy(MQTTTopics[i], settings.mqttBaseTopic);
         strcat(MQTTTopics[i], "/");
         settings.hostname.toCharArray(name, 16);
         strcat(MQTTTopics[i], name);
         if (i==0)  {strcat(MQTTTopics[i], settings.mqttDataTopic);}
-        else  {strcat(MQTTTopics[i], settings.mqttCtrlTopic);}
+        else if (i==1)  {strcat(MQTTTopics[i], settings.mqttCtrlTopic);}
+        else  {strcat(MQTTTopics[i], "/#");}
         Serial.print("Built topic: "); Serial.println(MQTTTopics[i]);
-      }
-      strcat(name, "/#");
-      if (MQTTClient.subscribe(MQTTTopics[1]))  {
-        Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[1]);
-        screen.print("Subscribed to "); screen.println(MQTTTopics[1]);
-      }
-      else  {
-        Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[1]);
-        screen.println("Failed");
-      }
-      if (MQTTClient.subscribe(name))  {
-        Serial.print("Subscribed to topic: "); Serial.println(name);
-        screen.print("Subscribed to "); screen.println(name);
-      }
-      else  {
-        Serial.println("Subscribing failed: "); Serial.println(name);
-        screen.println("Failed");
+        if (MQTTClient.subscribe(MQTTTopics[i]))  {
+          Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[i]);
+          screen.print("Subscribed to "); screen.println(MQTTTopics[i]);
+        }
+        else  {
+          Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[i]);
+          screen.println("Failed");
+        }
       }
     }
     else {                                                              // Error messages if not connected
@@ -625,17 +617,31 @@ void MQTTreconnect() {
     if (MQTTClient.connect("TStatWiFiClient")) {
       Serial.println("connected");
       // Re-subscribe to the topic
-      if (MQTTClient.subscribe(MQTTTopics[1])) {
-        Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[1]);
-      } else {
-        Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[1]);
+      
+      for (int i=0; i<3; i++)  {
+        strcpy(MQTTTopics[i], settings.mqttBaseTopic);
+        strcat(MQTTTopics[i], "/");
+        settings.hostname.toCharArray(name, 16);
+        strcat(MQTTTopics[i], name);
+        if (i==0)  {strcat(MQTTTopics[i], settings.mqttDataTopic);}
+        else if (i==1)  {strcat(MQTTTopics[i], settings.mqttCtrlTopic);}
+        else  {strcat(MQTTTopics[i], "/#");}
+        Serial.print("Built topic: "); Serial.println(MQTTTopics[i]);
+        if (MQTTClient.subscribe(MQTTTopics[i]))  {
+          Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[i]);
+          screen.print("Subscribed to "); screen.println(MQTTTopics[i]);
+        }
+        else  {
+          Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[i]);
+          screen.println("Failed");
+        }
       }
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(MQTTClient.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
+      else {
+        Serial.print("failed, rc=");
+        Serial.print(MQTTClient.state());
+        Serial.println(" try again in 5 seconds");
+        delay(5000);
+      }
   }
 }
 
