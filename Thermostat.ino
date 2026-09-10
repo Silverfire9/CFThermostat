@@ -348,27 +348,27 @@ void initWiFi()  {
 }*/
 
 void MQTTSubCallback(char* topic, byte* payload, unsigned int length) {
-  char msgBuf[256];
+  char msgBuf[256] = "Placeholder";
   static unsigned long lastBeacon = 0;
 
   Serial.println("\n     *****MQTT message received*****");
   // Serial.print("Last beacon: "); Serial.println(lastBeacon);
   // Serial.print("Now: "); Serial.println(millis());
 
-  if (strcmp(topic, MQTTTopics[0])!=0)  {
-    if (millis()-500>lastBeacon)  {
-      Serial.print("     Topic:"); Serial.println(topic);
-      Serial.print("     Message: "); {Serial.print(msgBuf);} Serial.println("");
-      Serial.print("     Length: "); Serial.print(length); Serial.println(" char");
-      lastBeacon = millis();
-    }
-    else  {
-      Serial.println("Received recently sent beacon");
-    }
-  }
-  else  {
-    Serial.println("Received broadcast topic");
-  }
+  // if (strcmp(topic, MQTTTopics[0])!=0)  {
+  //   if (millis()-500>lastBeacon)  {
+  Serial.print("     Topic:"); Serial.println(topic);
+  Serial.print("     Message: "); {Serial.print(msgBuf);} Serial.println("");
+  Serial.print("     Length: "); Serial.print(length); Serial.println(" char");
+  //     lastBeacon = millis();
+  //   }
+  //   else  {
+  //     Serial.println("Received recently sent beacon");
+  //   }
+  // }
+  // else  {
+  //   Serial.println("Received broadcast topic");
+  // }
   Serial.println("     ******************************\n");
 }
 
@@ -398,6 +398,8 @@ void initMQTT() {
         else if (i==1)  {strcat(MQTTTopics[i], settings.mqttCtrlTopic);}
         else  {strcat(MQTTTopics[i], "/#");}
         Serial.print("Built topic: "); Serial.println(MQTTTopics[i]);
+      }
+      for (int i=0; i<3; i++)  {
         if (MQTTClient.subscribe(MQTTTopics[i]))  {
           Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[i]);
           screen.print("Subscribed to "); screen.println(MQTTTopics[i]);
@@ -470,6 +472,9 @@ void sendStatus()  {
   #ifdef MQTTDEBUG
   Serial.print("JSON Output:"); Serial.println(JSONFile);
   #endif
+  if (!MQTTClient.connected()) {
+    MQTTreconnect();
+  }
   MQTTClient.publish(MQTTTopics[0], JSONFile);
 }
 /*
@@ -615,7 +620,6 @@ void loopFast(void *pvParameters)  {
 }
 
 void MQTTreconnect() {
-  char name[64];
   // Loop until we're reconnected
   while (!MQTTClient.connected()) {
     Serial.print("Attempting MQTT reconnection...");
@@ -623,16 +627,7 @@ void MQTTreconnect() {
     if (MQTTClient.connect("TStatWiFiClient")) {
       Serial.println("connected");
       // Re-subscribe to the topic
-      
       for (int i=0; i<3; i++)  {
-        strcpy(MQTTTopics[i], settings.mqttBaseTopic);
-        strcat(MQTTTopics[i], "/");
-        settings.hostname.toCharArray(name, 16);
-        strcat(MQTTTopics[i], name);
-        if (i==0)  {strcat(MQTTTopics[i], settings.mqttDataTopic);}
-        else if (i==1)  {strcat(MQTTTopics[i], settings.mqttCtrlTopic);}
-        else  {strcat(MQTTTopics[i], "/#");}
-        Serial.print("Built topic: "); Serial.println(MQTTTopics[i]);
         if (MQTTClient.subscribe(MQTTTopics[i]))  {
           Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[i]);
           screen.print("Subscribed to "); screen.println(MQTTTopics[i]);
@@ -655,9 +650,9 @@ void loop() {
   }
   MQTTClient.loop();
 
-  if (millis()>=(lastRead+settings.sleepTime))  {
+  if (millis()>=(lastRead+(60000*settings.sleepTime)))  {
     #ifdef LOOPDEBBUG
-    Serial.print("Millis: "); Serial.print(millis()); Serial.print(", Threshold: "); Serial.print(lastRead+(settings.sleepTime)); Serial.print(", Difference: "); Serial.println(millis()-lastRead);
+    Serial.print("Millis: "); Serial.print(millis()); Serial.print(", Threshold: "); Serial.print(lastRead+(60000*settings.sleepTime)); Serial.print(", Difference: "); Serial.println(millis()-lastRead);
     Serial.println("**************************************");            // Read temperature and respond
     #endif
     readTemp(); 
