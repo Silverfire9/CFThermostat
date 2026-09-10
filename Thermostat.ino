@@ -620,15 +620,23 @@ void loopFast(void *pvParameters)  {
 void MQTTreconnect() {
   // Loop until we're reconnected
   while (!MQTTClient.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    Serial.print("Attempting MQTT reconnection...");
     // Attempt to connect
-    if (MQTTClient.connect("ESP8266Client")) {
+    if (MQTTClient.connect("TStatWiFiClient")) {
       Serial.println("connected");
-      // Subscribe
-      MQTTClient.subscribe("esp32/output");
+      // Re-subscribe to the topic
+      if (MQTTClient.subscribe(MQTTTopics[1])) {
+        Serial.print("Subscribed to topic: "); Serial.println(MQTTTopics[1]);
+      } else {
+        Serial.println("Subscribing failed: "); Serial.println(MQTTTopics[1]);
+      }
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(MQTTClient.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
     }
   }
-  Serial.println("Connected");
 }
 
 void loop() {
