@@ -2262,6 +2262,7 @@ void modeIcon(char mode[5]) {
     screen.drawFastVLine(MODE_XPOS + 31, MODE_YPOS, 12, BLACK); screen.drawFastVLine(MODE_XPOS + 31, MODE_YPOS + 12, 8, RED); screen.drawFastVLine(MODE_XPOS + 31, MODE_YPOS + 20, 12, BLACK);
   }
 }
+
 void drawWifi()  {
   bool wifiConn = false;
   if (WiFi.status() == WL_CONNECTED)  {wifiConn = true;}
@@ -2426,7 +2427,7 @@ void ScreenInit() {
 
   drawTopBar("Booting");
   drawBottomBar();
-  for (char count = 1; count <= settings.brightness; count++) {
+  for (char count = 0; count <= settings.brightness; count++) {
     setScreenBrightness(count);
     delay(100);
   }
@@ -2468,7 +2469,7 @@ void checkTouch() {
     int mapX = map(p.x, calibrations.ts_minX, calibrations.ts_maxX, 0, SCREEN_WIDTH);
     int mapY = map(p.y, calibrations.ts_minY, calibrations.ts_maxY, 0, SCREEN_HEIGHT);
 
-    #ifdef PROGTEXT
+    #ifdef TOUCHDEBUG
     Serial.print("Mapped point: (");
     Serial.print(mapX);
     Serial.print(",");
@@ -2531,6 +2532,7 @@ void TouchCal(int calTime) {
       if (p.y > maxY) { maxY = p.y; }
       mapX = map(p.x, minX, maxX, 0, SCREEN_WIDTH);
       mapY = map(p.y, minY, maxY, 0, SCREEN_HEIGHT);
+      #ifdef TOUCHDEBUG
       Serial.print("Pressure = ");
       Serial.print(p.z);
       Serial.print("     X = ");
@@ -2552,6 +2554,7 @@ void TouchCal(int calTime) {
       Serial.println(")\n");
       digitalWrite(pinLED, 1);
       drawTouchPoint(mapX, mapY, 5);
+      #endif
       delay(100);
     }
     calibrations.ts_minX = minX;

@@ -14,6 +14,7 @@
 // #define MQTTDEBUG
 // #define PREFDEBBUG
 // #define SETUPDEBUG
+#define TOUCHDEBUG
 
 // Screen Pinout
 #define pin_DC 17             // Purple   
@@ -46,6 +47,8 @@
 // Alias Definitions
 #define RELAY_ON 1
 #define RELAY_OFF !RELAY_ON
+#define DISP_ON 1
+#define DISP_OFF !DISP_ON
 
 // Encoder Pinout
 #ifdef ENCODER_ACTIVE
@@ -409,6 +412,7 @@ void initMQTT() {
           screen.println("Failed");
         }
       }
+      Serial.print("MQTT Subscribe result: "); Serial.println(MQTTClient.state());  // Should be 0 for "connected"
     }
     else {                                                              // Error messages if not connected
       int MQTTErr = MQTTClient.state();
@@ -604,21 +608,6 @@ void sleepTimer()  {
   // Serial.println("Reconnecting to the network...");
 }
 
-void loopFast(void *pvParameters)  {
-  for(;;)  {
-
-    // Serial.print("loopFast() running on core "); Serial.println(xPortGetCoreID());
-    // delay(10);
-    // checkTouch();
-    delay(10);
-    if (digitalRead(pinWake)==0)  {
-      Serial.println("*************MANUAL RESET*************");
-      ESP.restart();
-    }
-    delay(10);
-  }
-}
-
 void MQTTreconnect() {
   // Loop until we're reconnected
   while (!MQTTClient.connected()) {
@@ -641,7 +630,22 @@ void MQTTreconnect() {
   }
 }
 
-void loop() {
+void loopFast(void *pvParameters)  {          // Pinned to core 0
+  Serial.print("loopFast() running on core "); Serial.println(xPortGetCoreID());
+  for(;;)  {
+    checkTouch();
+    delay(10);
+    if (digitalRead(pinWake)==0)  {
+    digitalWrite(pin_BL, DISP_OFF);
+    // screen.fillScreen(0x0000);
+      Serial.println("*************MANUAL RESET*************");
+      ESP.restart();
+    }
+    delay(100);
+  }
+}
+
+void loop() {                                 // Runs pinned to core 1 by default
   static unsigned long lastUpdate = millis();
   static int oldTarget = settings.tempSet;
   
@@ -731,60 +735,14 @@ void loop() {
       sendStatus();
     }
 
+    drawHistoryGraph();
+
     #ifdef LOOPDEBBUG
     Serial.print("Furnace relay state: "); 
     if (digitalRead(pinRelayOut)==RELAY_ON)  {Serial.println("On");}
     else  {Serial.println("Off");}
     #endif
 
-    drawHistoryGraph();
-    /*
-    if (button_sel.status==true)  {                                     // Button tester
-      Serial.println("Select button pressed.");
-      button_sel.status=false;
-    }
-    if (button_up.status==true)  {
-      Serial.println("Up button pressed.");
-      button_up.status=false;
-    }
-    if (button_down.status==true)  {
-      Serial.println("Down button pressed.");
-      button_down.status=false;
-    }
-    if (millis()>=(lastUpdate+5000))  {                                 // Mode tester
-        modeIcon(opMode, MODE_XPOS, MODE_YPOS);
-        if (strcmp(opMode, "Heat")==0)  {
-          strcpy(opMode, "Fan");
-        }
-        else if (strcmp(opMode, "Fan")==0)  {
-          strcpy(opMode, "Cool");
-        }
-        else if (strcmp(opMode, "Cool")==0)  {
-          strcpy(opMode, "Err");
-        }
-        else  {
-          strcpy(opMode, "Heat");
-        }
-        lastUpdate = millis();
-      }
-    
-    if (millis()>=(lastUpdate+5000))  {                                 // Screen tester
-      drawBar(4, 15, 0);
-      titleText("Settings");
-      lastUpdate = millis();
-    }
-    static bool countUp = true;                                            // Relay tester
-    if (countUp==true)  {
-      if (settings.tempSet<30)  {settings.tempSet = settings.tempSet+1;}
-      else  {countUp = false;}
-    }
-    else  {
-      if (settings.tempSet>0)  {settings.tempSet = settings.tempSet-1;}
-      else  {countUp = true;}
-    }
-    #ifdef LOOPDEBBUG
-    Serial.println("**************************************\n");
-    #endif
-  */
+    lastUpdate = millis();    
   }
 }
